@@ -1,6 +1,7 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run build",
+  "installCommand": "npm install --platform=linux --arch=x64",
+  "buildCommand": "rm -rf node_modules && npm install && npm run build",
   "outputDirectory": "dist",
   "routes": [
     { "handle": "filesystem" },
