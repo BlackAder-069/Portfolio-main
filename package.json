@@ -78,6 +78,7 @@
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
+    "esbuild": "^0.18.20",
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
@@ -103,6 +104,7 @@
     "@rollup/rollup-linux-x64-gnu": "4.6.1",
     "@rollup/rollup-win32-arm64-msvc": "4.6.1",
     "@rollup/rollup-win32-ia32-msvc": "4.6.1",
-    "@rollup/rollup-win32-x64-msvc": "4.6.1"
+    "@rollup/rollup-win32-x64-msvc": "4.6.1",
+    "@esbuild/linux-x64": "0.18.20"
   }
 }
