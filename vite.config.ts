@@ -34,8 +34,14 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      // Add more fault tolerance to the build process
+      // Configure safe minification
       minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+        }
+      },
       sourcemap: false,
       cssCodeSplit: false,
     },
