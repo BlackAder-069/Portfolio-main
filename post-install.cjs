@@ -2,14 +2,17 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+console.log('Running manual post-install tasks...');
 console.log('Detected platform:', process.platform);
 
-// Function to check if a package is installed
-function isPackageInstalled(packageName) {
+// Function to safely execute commands
+function safeExec(command) {
   try {
-    require.resolve(packageName);
+    console.log(`Executing: ${command}`);
+    execSync(command, { stdio: 'inherit' });
     return true;
-  } catch (e) {
+  } catch (error) {
+    console.error(`Command failed: ${command}`, error.message);
     return false;
   }
 }
@@ -18,66 +21,28 @@ function isPackageInstalled(packageName) {
 const isLinux = process.platform === 'linux';
 
 if (isLinux) {
-  console.log('Linux platform detected, checking for necessary packages...');
-
-  // Check for SWC packages
-  const swcPath = path.join('node_modules', '@swc');
-  if (fs.existsSync(swcPath)) {
-    console.log('SWC packages directory exists, verifying Linux bindings...');
-    
-    try {
-      // Check libc type (glibc vs musl)
-      const isMusl = (() => {
-        try {
-          // Check for Alpine Linux which uses musl
-          const output = execSync('cat /etc/os-release').toString();
-          return output.toLowerCase().includes('alpine');
-        } catch (error) {
-          // If we can't determine, assume glibc as it's more common
-          return false;
-        }
-      })();
-
-      console.log(`Detected libc: ${isMusl ? 'musl' : 'glibc'}`);
-      
-      // Only install the appropriate binding for the current libc
-      if (isMusl) {
-        // Check for MUSL bindings - only for Alpine Linux
-        const hasMuslBindings = isPackageInstalled('@swc/core-linux-x64-musl');
-        console.log('Linux MUSL bindings:', hasMuslBindings ? 'Found' : 'Missing');
-        
-        if (!hasMuslBindings) {
-          console.log('Installing Linux MUSL bindings...');
-          execSync('npm install @swc/core-linux-x64-musl --no-save', { stdio: 'inherit' });
-        }
-      } else {
-        // Check for GNU bindings - for standard Linux (glibc)
-        const hasGnuBindings = isPackageInstalled('@swc/core-linux-x64-gnu');
-        console.log('Linux GNU bindings:', hasGnuBindings ? 'Found' : 'Missing');
-        
-        if (!hasGnuBindings) {
-          console.log('Installing Linux GNU bindings...');
-          execSync('npm install @swc/core-linux-x64-gnu --no-save', { stdio: 'inherit' });
-        }
-      }
-    } catch (error) {
-      console.warn('Error checking Linux bindings:', error.message);
-      console.log('Continuing with deployment...');
-    }
-  } else {
-    console.log('SWC packages directory not found, skipping binding checks.');
-  }
-}
-
-// Check for Terser
-if (!isPackageInstalled('terser')) {
+  console.log('Linux platform detected - installing only glibc-compatible packages');
+  
+  // Install GNU bindings directly (avoid checking/detecting, just install what we need)
   try {
-    console.log('Installing Terser for minification...');
-    execSync('npm install terser --save-dev', { stdio: 'inherit' });
-    console.log('Terser installed successfully.');
+    // Install specific SWC GNU bindings needed for Linux
+    safeExec('npm install @swc/core-linux-x64-gnu@1.3.96 --no-save');
+    
+    // Install rollup GNU bindings for Linux
+    safeExec('npm install @rollup/rollup-linux-x64-gnu@4.6.1 --no-save');
+
   } catch (error) {
-    console.warn('Failed to install Terser:', error.message);
+    console.warn('Error installing Linux packages:', error.message);
+    console.log('Continuing with deployment...');
   }
 }
 
-console.log('Post-install check completed successfully');
+// Ensure Terser is installed for minification
+try {
+  console.log('Installing Terser for minification...');
+  safeExec('npm install terser@5.26.0 --no-save');
+} catch (error) {
+  console.warn('Failed to install Terser:', error.message);
+}
+
+console.log('Post-install tasks completed successfully');
