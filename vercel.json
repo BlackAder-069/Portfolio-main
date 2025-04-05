@@ -1,7 +1,7 @@
 {
   "framework": "vite",
-  "installCommand": "npm install --no-save --legacy-peer-deps --ignore-scripts",
-  "buildCommand": "node post-install.cjs && npm run build",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "builds": [
     {
@@ -9,8 +9,8 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "installCommand": "npm install --no-save --legacy-peer-deps --ignore-scripts",
-        "buildCommand": "node post-install.cjs && npm run build"
+        "installCommand": "npm install",
+        "buildCommand": "npm run build"
       }
     }
   ],

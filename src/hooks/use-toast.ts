@@ -187,3 +187,7 @@ export function useToast() {
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
+
+// Add explicit exports for better module resolution
+export { toast }
+export type { ToasterToast }

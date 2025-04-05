@@ -44,6 +44,13 @@ export default defineConfig(({ mode }) => {
       },
       sourcemap: false,
       cssCodeSplit: false,
+      // Add rollup options to better handle environment differences
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+          warn(warning);
+        },
+      }
     },
     optimizeDeps: {
       // Ensure dependencies are properly processed
@@ -52,5 +59,9 @@ export default defineConfig(({ mode }) => {
         target: 'es2020',
       }
     },
+    // Add better error handling
+    esbuild: {
+      logOverride: { 'this-is-undefined-in-esm': 'silent' }
+    }
   };
 });

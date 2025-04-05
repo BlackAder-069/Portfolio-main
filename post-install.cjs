@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('Running manual post-install tasks...');
+console.log('Running post-install script...');
 console.log('Detected platform:', process.platform);
 
 // Function to safely execute commands
@@ -14,6 +14,24 @@ function safeExec(command) {
   } catch (error) {
     console.error(`Command failed: ${command}`, error.message);
     return false;
+  }
+}
+
+// Check if running in a Vercel environment
+const isVercel = process.env.VERCEL === '1';
+
+if (isVercel) {
+  try {
+    // Make sure the platform-specific esbuild package is installed
+    console.log('Ensuring platform-specific esbuild packages are installed...');
+    
+    // Try to install the Linux x64 version specifically for Vercel
+    execSync('npm install @esbuild/linux-x64', { stdio: 'inherit' });
+    
+    console.log('Successfully installed platform-specific dependencies');
+  } catch (error) {
+    console.error('Error in post-install script:', error);
+    // Don't exit with error - let the build continue to try other approaches
   }
 }
 
@@ -45,4 +63,4 @@ try {
   console.warn('Failed to install Terser:', error.message);
 }
 
-console.log('Post-install tasks completed successfully');
+console.log('Post-install completed');
