@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "installCommand": "npm install && npm install @rollup/rollup-linux-x64-gnu || npm install",
+  "installCommand": "npm install --force && npm install @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu @swc/core-linux-x64-musl --no-save || npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "routes": [

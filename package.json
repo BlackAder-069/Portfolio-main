@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node src/server/api.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run server\""
+    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
+    "postinstall": "node post-install.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -87,6 +88,9 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "@swc/core-linux-x64-gnu": "^1.3.96",
+    "@swc/core-linux-x64-musl": "^1.3.96",
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }

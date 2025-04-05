@@ -4,19 +4,47 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ mode }) => {
+  // Configure React plugin with fallback options
+  const reactPlugin = () => {
+    try {
+      return react();
+    } catch (error) {
+      console.warn("Failed to initialize SWC plugin, falling back to basic configuration:", error);
+      return react({ 
+        jsxImportSource: 'react',
+        plugins: [] 
+      });
+    }
+  };
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
     },
-  },
-}));
+    plugins: [
+      reactPlugin(),
+      mode === 'development' &&
+      componentTagger(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    build: {
+      // Add more fault tolerance to the build process
+      minify: 'terser',
+      sourcemap: false,
+      cssCodeSplit: false,
+    },
+    optimizeDeps: {
+      // Ensure dependencies are properly processed
+      include: ['react', 'react-dom'],
+      esbuildOptions: {
+        target: 'es2020',
+      }
+    },
+  };
+});
