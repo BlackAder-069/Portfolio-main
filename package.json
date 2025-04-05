@@ -5,13 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node esbuild-fix.js && vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "node src/server/api.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "postinstall": "node --no-warnings post-install.cjs || true"
+    "build": "vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

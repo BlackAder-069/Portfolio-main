@@ -2,9 +2,14 @@
  * This script is a fallback mechanism to fix esbuild in the Vercel environment
  * It will be executed before the build if the normal post-install didn't work
  */
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('Running emergency esbuild fix...');
 
@@ -19,8 +24,7 @@ try {
     let content = fs.readFileSync(esbuildNodePath, 'utf8');
     
     // Add a patch to help esbuild find binaries
-    if (!content.includes('EMERGENCY_VERCEL_FIX')) {
-      const patchCode = `
+    const patchCode = `
 // EMERGENCY_VERCEL_FIX
 try {
   // Try to force the binary to be available
@@ -42,7 +46,8 @@ try {
 }
 `;
       
-      // Insert the patch at the beginning of the file
+    // Insert the patch at the beginning of the file
+    if (!content.includes('EMERGENCY_VERCEL_FIX')) {
       content = patchCode + content;
       fs.writeFileSync(esbuildNodePath, content);
       console.log('esbuild emergency patch applied');

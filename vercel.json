@@ -1,7 +1,7 @@
 {
   "framework": "vite",
   "installCommand": "npm install --include=optional",
-  "buildCommand": "node post-install.cjs && npm run build",
+  "buildCommand": "node post-install.cjs && vite build",
   "outputDirectory": "dist",
   "builds": [
     {
@@ -10,7 +10,7 @@
       "config": {
         "distDir": "dist",
         "installCommand": "npm install --include=optional",
-        "buildCommand": "node post-install.cjs && npm run build"
+        "buildCommand": "node post-install.cjs && vite build"
       }
     }
   ],
