@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('Running post-install script...');
+console.log('Running enhanced post-install script...');
 console.log('Detected platform:', process.platform);
 
 // Function to safely execute commands
@@ -17,50 +17,73 @@ function safeExec(command) {
   }
 }
 
+// Check if file exists
+function fileExists(filePath) {
+  try {
+    return fs.existsSync(filePath);
+  } catch (err) {
+    return false;
+  }
+}
+
 // Check if running in a Vercel environment
 const isVercel = process.env.VERCEL === '1';
+console.log('Is Vercel environment:', isVercel);
 
-if (isVercel) {
-  try {
-    // Make sure the platform-specific esbuild package is installed
-    console.log('Ensuring platform-specific esbuild packages are installed...');
-    
-    // Try to install the Linux x64 version specifically for Vercel
-    execSync('npm install @esbuild/linux-x64', { stdio: 'inherit' });
-    
-    console.log('Successfully installed platform-specific dependencies');
-  } catch (error) {
-    console.error('Error in post-install script:', error);
-    // Don't exit with error - let the build continue to try other approaches
-  }
-}
-
-// Determine if we're on Linux
-const isLinux = process.platform === 'linux';
-
-if (isLinux) {
-  console.log('Linux platform detected - installing only glibc-compatible packages');
-  
-  // Install GNU bindings directly (avoid checking/detecting, just install what we need)
-  try {
-    // Install specific SWC GNU bindings needed for Linux
-    safeExec('npm install @swc/core-linux-x64-gnu@1.3.96 --no-save');
-    
-    // Install rollup GNU bindings for Linux
-    safeExec('npm install @rollup/rollup-linux-x64-gnu@4.6.1 --no-save');
-
-  } catch (error) {
-    console.warn('Error installing Linux packages:', error.message);
-    console.log('Continuing with deployment...');
-  }
-}
-
-// Ensure Terser is installed for minification
+// CRITICAL FIX: Make sure esbuild can work on Vercel
 try {
-  console.log('Installing Terser for minification...');
-  safeExec('npm install terser@5.26.0 --no-save');
+  console.log('Ensuring esbuild compatibility...');
+  
+  // Force install Linux binaries for esbuild
+  safeExec('npm install @esbuild/linux-x64 --no-save');
+  
+  // If in Vercel, we need to patch the esbuild installation
+  if (isVercel) {
+    const esbuildPkgPath = path.join(__dirname, 'node_modules', 'esbuild', 'package.json');
+    if (fileExists(esbuildPkgPath)) {
+      console.log('Patching esbuild package.json...');
+      const esbuildPkg = require(esbuildPkgPath);
+      
+      // Make sure the proper binary can be detected
+      if (!esbuildPkg.optionalDependencies || !esbuildPkg.optionalDependencies['@esbuild/linux-x64']) {
+        console.log('Adding @esbuild/linux-x64 to esbuild dependencies...');
+        esbuildPkg.optionalDependencies = esbuildPkg.optionalDependencies || {};
+        esbuildPkg.optionalDependencies['@esbuild/linux-x64'] = '0.18.20';
+        
+        // Write the updated package.json
+        fs.writeFileSync(esbuildPkgPath, JSON.stringify(esbuildPkg, null, 2));
+        console.log('esbuild package.json patched successfully');
+      }
+    }
+    
+    // Create custom esbuild binary path if needed
+    const esbuildBinPath = path.join(__dirname, 'node_modules', '@esbuild', 'linux-x64', 'bin', 'esbuild');
+    const esbuildNodeModulesDir = path.join(__dirname, 'node_modules', '@esbuild', 'linux-x64');
+    
+    if (!fileExists(esbuildNodeModulesDir)) {
+      console.log('Creating @esbuild/linux-x64 directory structure...');
+      try {
+        // Create the directory structure
+        fs.mkdirSync(path.join(__dirname, 'node_modules', '@esbuild'), { recursive: true });
+        fs.mkdirSync(path.join(__dirname, 'node_modules', '@esbuild', 'linux-x64'), { recursive: true });
+        fs.mkdirSync(path.join(__dirname, 'node_modules', '@esbuild', 'linux-x64', 'bin'), { recursive: true });
+      } catch (err) {
+        console.warn('Error creating directory structure:', err.message);
+      }
+    }
+  }
+  
+  // Install other Linux-specific dependencies
+  if (isVercel || process.platform === 'linux') {
+    console.log('Installing Linux platform-specific dependencies...');
+    safeExec('npm install @swc/core-linux-x64-gnu --no-save');
+    safeExec('npm install @rollup/rollup-linux-x64-gnu --no-save');
+    safeExec('npm install terser@5.26.0 --no-save');
+  }
+  
 } catch (error) {
-  console.warn('Failed to install Terser:', error.message);
+  console.warn('Error in post-install esbuild setup:', error.message);
+  console.log('Continuing with build process...');
 }
 
-console.log('Post-install completed');
+console.log('Post-install script completed');

@@ -61,7 +61,9 @@ export default defineConfig(({ mode }) => {
     },
     // Add better error handling
     esbuild: {
-      logOverride: { 'this-is-undefined-in-esm': 'silent' }
+      logOverride: { 'this-is-undefined-in-esm': 'silent' },
+      // Add a fallback - needed for Vercel deployments
+      platform: 'node'
     }
   };
 });
