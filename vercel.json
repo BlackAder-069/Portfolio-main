@@ -1,8 +1,17 @@
 {
   "framework": "vite",
-  "installCommand": "npm install --force && npm install @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu @swc/core-linux-x64-musl --no-save || npm install",
+  "installCommand": "npm install --no-save || npm install --force",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }

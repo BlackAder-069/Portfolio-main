@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "server": "node src/server/api.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "postinstall": "node post-install.js"
+    "postinstall": "node --no-warnings post-install.js || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

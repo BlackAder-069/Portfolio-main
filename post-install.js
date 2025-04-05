@@ -1,75 +1,92 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
-
-console.log('Detected platform:', process.platform);
-
-// Function to check if a package is installed
-function isPackageInstalled(packageName) {
-  try {
-    // Dynamic import for checking if a package exists
-    new Function(`return import('${packageName}')`)();
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-// Determine if we're on Linux
-const isLinux = process.platform === 'linux';
-
-if (isLinux) {
-  console.log('Linux platform detected, checking for necessary packages...');
+// Use top-level await to handle ESM imports
+try {
+  console.log('Detected platform:', process.platform);
   
-  // Get directory path (ESM equivalent of __dirname)
+  const platform = process.platform;
+  const { execSync } = await import('child_process');
+  const { default: fs } = await import('fs');
+  const { default: path } = await import('path');
+  const { fileURLToPath } = await import('url');
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   
-  // Check for SWC packages
-  const swcPath = path.join(__dirname, 'node_modules', '@swc');
-  if (fs.existsSync(swcPath)) {
-    console.log('SWC packages directory exists, verifying Linux bindings...');
-    
+  // Check if a directory exists
+  function directoryExists(dirPath) {
     try {
-      // Use fs to check if packages exist instead of require.resolve
-      const hasGnuBindings = fs.existsSync(path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-gnu'));
-      console.log('Linux GNU bindings:', hasGnuBindings ? 'Found' : 'Missing');
-      
-      const hasMuslBindings = fs.existsSync(path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-musl'));
-      console.log('Linux MUSL bindings:', hasMuslBindings ? 'Found' : 'Missing');
-      
-      // If we don't have GNU bindings, try to install them
-      if (!hasGnuBindings) {
+      return fs.existsSync(dirPath);
+    } catch (error) {
+      console.warn(`Error checking if directory exists (${dirPath}):`, error.message);
+      return false;
+    }
+  }
+  
+  // Safely execute commands with fallback
+  function safeExec(command, fallbackCommand = null) {
+    try {
+      execSync(command, { stdio: 'inherit' });
+      return true;
+    } catch (error) {
+      console.warn(`Command failed: ${command}`);
+      if (fallbackCommand) {
         try {
-          console.log('Installing Linux GNU bindings...');
-          execSync('npm install @swc/core-linux-x64-gnu --no-save', { stdio: 'inherit' });
-          console.log('Linux GNU bindings installed successfully.');
-        } catch (error) {
-          console.warn('Failed to install Linux GNU bindings:', error.message);
+          console.log(`Trying fallback command: ${fallbackCommand}`);
+          execSync(fallbackCommand, { stdio: 'inherit' });
+          return true;
+        } catch (fbError) {
+          console.warn(`Fallback command failed:`, fbError.message);
         }
       }
-    } catch (error) {
-      console.warn('Error checking SWC bindings:', error.message);
+      return false;
     }
-  } else {
-    console.log('SWC packages directory not found, skipping binding checks.');
   }
-}
-
-// Check for Terser using fs instead of require.resolve
-try {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const terserExists = fs.existsSync(path.join(__dirname, 'node_modules', 'terser'));
   
-  if (!terserExists) {
-    console.log('Installing Terser for minification...');
-    execSync('npm install terser --save-dev', { stdio: 'inherit' });
-    console.log('Terser installed successfully.');
+  // Install platform-specific dependencies if needed
+  if (platform === 'linux') {
+    console.log('Linux platform detected, checking for necessary packages...');
+    
+    // Check for @swc/core installation
+    const swcPath = path.join(__dirname, 'node_modules', '@swc');
+    if (directoryExists(swcPath)) {
+      console.log('SWC packages directory exists, verifying Linux bindings...');
+      
+      // Check for Linux GNU bindings
+      const gnuBindingsPath = path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-gnu');
+      const hasGnuBindings = directoryExists(gnuBindingsPath);
+      console.log('Linux GNU bindings:', hasGnuBindings ? 'Found' : 'Missing');
+      
+      // Install GNU bindings if missing
+      if (!hasGnuBindings) {
+        console.log('Installing Linux GNU bindings...');
+        safeExec('npm install @swc/core-linux-x64-gnu --no-save');
+      }
+      
+      // Check for Rollup GNU bindings
+      const rollupGnuPath = path.join(__dirname, 'node_modules', '@rollup', 'rollup-linux-x64-gnu');
+      const hasRollupGnu = directoryExists(rollupGnuPath);
+      console.log('Rollup Linux GNU bindings:', hasRollupGnu ? 'Found' : 'Missing');
+      
+      // Install Rollup GNU bindings if missing
+      if (!hasRollupGnu) {
+        console.log('Installing Rollup Linux GNU bindings...');
+        safeExec('npm install @rollup/rollup-linux-x64-gnu --no-save');
+      }
+    } else {
+      console.log('SWC packages directory not found, skipping binding checks.');
+    }
   }
+  
+  // Ensure Terser is installed for minification
+  const terserPath = path.join(__dirname, 'node_modules', 'terser');
+  if (!directoryExists(terserPath)) {
+    console.log('Installing Terser for minification...');
+    safeExec('npm install terser --save-dev');
+  }
+  
+  console.log('Post-install check completed successfully');
 } catch (error) {
-  console.warn('Failed to check or install Terser:', error.message);
+  // Keep the process running even with errors - allows deployment to continue
+  console.warn('Post-install script encountered an error:', error.message);
+  console.log('Continuing with deployment process...');
+  process.exit(0); // Exit with success code to not break the build
 }
-
-console.log('Post-install check completed successfully');
