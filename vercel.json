@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "installCommand": "npm install --no-save || npm install --force",
+  "installCommand": "npm install --no-save --legacy-peer-deps --omit=optional || npm install --force --legacy-peer-deps --omit=optional",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "builds": [
@@ -8,7 +8,8 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "dist",
+        "installCommand": "npm install --no-save --legacy-peer-deps --omit=optional || npm install --force --legacy-peer-deps --omit=optional"
       }
     }
   ],

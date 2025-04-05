@@ -50,26 +50,46 @@ try {
     if (directoryExists(swcPath)) {
       console.log('SWC packages directory exists, verifying Linux bindings...');
       
-      // Check for Linux GNU bindings
-      const gnuBindingsPath = path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-gnu');
-      const hasGnuBindings = directoryExists(gnuBindingsPath);
-      console.log('Linux GNU bindings:', hasGnuBindings ? 'Found' : 'Missing');
-      
-      // Install GNU bindings if missing
-      if (!hasGnuBindings) {
-        console.log('Installing Linux GNU bindings...');
-        safeExec('npm install @swc/core-linux-x64-gnu --no-save');
-      }
-      
-      // Check for Rollup GNU bindings
-      const rollupGnuPath = path.join(__dirname, 'node_modules', '@rollup', 'rollup-linux-x64-gnu');
-      const hasRollupGnu = directoryExists(rollupGnuPath);
-      console.log('Rollup Linux GNU bindings:', hasRollupGnu ? 'Found' : 'Missing');
-      
-      // Install Rollup GNU bindings if missing
-      if (!hasRollupGnu) {
-        console.log('Installing Rollup Linux GNU bindings...');
-        safeExec('npm install @rollup/rollup-linux-x64-gnu --no-save');
+      try {
+        // Check libc type (glibc vs musl)
+        const isMusl = (() => {
+          try {
+            // Check for Alpine Linux which uses musl
+            const output = execSync('cat /etc/os-release').toString();
+            return output.toLowerCase().includes('alpine');
+          } catch (error) {
+            // If we can't determine, assume glibc as it's more common
+            return false;
+          }
+        })();
+
+        console.log(`Detected libc: ${isMusl ? 'musl' : 'glibc'}`);
+        
+        // Only install the appropriate binding for the current libc
+        if (isMusl) {
+          // For musl systems (Alpine Linux)
+          const muslBindingsPath = path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-musl');
+          const hasMuslBindings = directoryExists(muslBindingsPath);
+          console.log('Linux MUSL bindings:', hasMuslBindings ? 'Found' : 'Missing');
+          
+          if (!hasMuslBindings) {
+            console.log('Installing Linux MUSL bindings...');
+            safeExec('npm install @swc/core-linux-x64-musl --no-save');
+          }
+        } else {
+          // For glibc systems (most Linux distributions)
+          const gnuBindingsPath = path.join(__dirname, 'node_modules', '@swc', 'core-linux-x64-gnu');
+          const hasGnuBindings = directoryExists(gnuBindingsPath);
+          console.log('Linux GNU bindings:', hasGnuBindings ? 'Found' : 'Missing');
+          
+          if (!hasGnuBindings) {
+            console.log('Installing Linux GNU bindings...');
+            safeExec('npm install @swc/core-linux-x64-gnu --no-save');
+          }
+        }
+      } catch (error) {
+        console.warn('Error checking Linux bindings:', error.message);
+        console.log('Continuing with deployment...');
       }
     } else {
       console.log('SWC packages directory not found, skipping binding checks.');
